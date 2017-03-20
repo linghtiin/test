@@ -3,19 +3,21 @@
 
 
 //头文件包含
-#include<reg51.H>
+// #include<reg51.H>
+#include <STC89C5xRC.H>
 
 
 //重定义
 #ifndef uchar
-    #define uchar unsigned char
+#define uchar unsigned char
 #endif
+
 #ifndef uint
-    #define uint unsigned int
+#define uint unsigned int
 #endif
 
 //PIN口定义
-#define data P0
+#define lcd_data P0
 #define keyline P1
 sbit en=P2^7;
 sbit rw=P2^5;
@@ -29,5 +31,7 @@ void keyscan();
 void init();
 void w_com(uchar com);
 void w_data(uchar dat);
+uchar re_data();
+uchar re_sta();
 
 #endif // LCD_H_INCLUDED
