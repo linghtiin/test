@@ -10,15 +10,15 @@
 #include "lcd.h"
 
 
-#define N 5
+#define N 80
 
 
 unsigned char key;
-unsigned char t[N]; //其十位用于错误检测
-float n[N];
-float daan;
-unsigned char l,f,e,sta;
+unsigned char t[N]; //显示缓存
+unsigned char l,e,sta;
 
+
+//错误处理函数
 void err_mo(uchar e)
 {
     uchar i,err[]="error";
@@ -34,9 +34,11 @@ void err_mo(uchar e)
     w_data(0x01);
 }
 
+
+//全局LCD处理
 void lcd_mo()
 {
-        //全局LCD处理
+
         if(sta>78)    //LCD数据溢出
             err_mo(5);
         else if(sta>54) //
@@ -47,6 +49,7 @@ void lcd_mo()
             w_com(0x07);
 
 }
+
 
 void keyscan() // 矩阵键盘 完成版
 {
@@ -79,16 +82,38 @@ void keyscan() // 矩阵键盘 完成版
 
 }
 
+//显示刷新函数
+void lcd_scan()
+{
+    w_com(0x01);
 
+    if(sta>78)    //LCD数据溢出
+        err_mo(5);
+    else if(sta>54) //
+        w_com(0x07);
+    else if(sta>40) //
+        w_com(0x06);
+    else if(sta>14) //
+        w_com(0x07);
+
+    for(i=0;i<N;++)
+        w_data(t[i]);
+}
 
 void main(void)
 {
-
     init();
-    l=0,f=0,e=0,sta=0;
+
+    unsigned char i;
+    for(i=0;i<=N;i++)
+        t[i]=0x20;
+
+
+    l=0,e=0,sta=0;
     while(1)
     {
         keyscan();
+
 
         //加减乘除的分支
         if(key%4==0)
@@ -98,33 +123,21 @@ void main(void)
             switch(key)
             {
                 case(4):
-                    t[f]=1;
-                    f++;
-                    l=0;
-                    w_data('+');
+                    t[sta]='+';
                     break;
                 case(8):
-                    t[f]=2;
-                    f++;
-                    l=0;
-                    w_data('-');
+                    t[sta]='-';
                     break;
                 case(12):
-                    t[f]=3;
-                    f++;
-                    l=0;
-                    w_data('*');
+                    t[sta]='*';
                     break;
                 case(16):
-                    t[f]=4;
-                    f++;
-                    l=0;
-                    w_data('/');
+                    t[sta]='/';
                     break;
             }
 
             delayms(10);
-
+            l=0;
             key=0;
             sta+=1;
 
@@ -133,25 +146,21 @@ void main(void)
         else if(key==13)
         {
             unsigned char i;
-            for(i=0;i<=f;i++)
-            {
-                n[i]=0;
-                t[i]=0;
-            }
+            for(i=0;i<=N;i++)
+                t[i]=0x20;
 
             w_com(0x01);
 
-            f=0;
+            sta=0;
             l=0;
             e=0;
-            sta=0;
             key=0;
         }
         //等于的分支
         else if(key==15)
         {
-            unsigned char i,we[10]={0};
-            double t;
+            float daan,t_daan,tt_daan;
+            char f1=0,f2=0;
             if(l==0||e!=0)
             {
                 //输出错误
@@ -160,30 +169,92 @@ void main(void)
                 err_mo(e);
             }
 
-            daan=n[0];
-            for(i=0;i<f;i++)
+            daan=0;
+            t_daan=0;
+            tt_daan=0;
+            for(i=0;i<sta;i++)
             {
                 switch(t[i])
                 {
-                    case(1):
-                        daan+=n[i+1];
+                    case('1'):
+                        tt_daan*=10;
+                        tt_daan+=1;
                         break;
-                    case(2):
-                        daan-=n[i+1];
+                    case('2'):
+                        tt_daan*=10;
+                        tt_daan+=2;
                         break;
-                    case(3):
-                        daan*=n[i+1];
+                    case('3'):
+                        tt_daan*=10;
+                        tt_daan+=3;
                         break;
-                    case(4):
-                        if(daan==0||n[i+1]==0)
-                            err_mo(4);
-                        else
-                            daan/=n[i+1];
+                    case('4'):
+                        tt_daan*=10;
+                        tt_daan+=4;
                         break;
-                    default:
-                        err_mo(3);
+                    case('5'):
+                        tt_daan*=10;
+                        tt_daan+=5;
+                        break;
+                    case('6'):
+                        tt_daan*=10;
+                        tt_daan+=6;
+                        break;
+                    case('7'):
+                        tt_daan*=10;
+                        tt_daan+=7;
+                        break;
+                    case('8'):
+                        tt_daan*=10;
+                        tt_daan+=8;
+                        break;
+                    case('9'):
+                        tt_daan*=10;
+                        tt_daan+=9;
+                        break;
+                    case('+'):
+                        if(f2==0)
+                            daan=tt_daan;
+                        f2=1;
+                        if(f1)
+
+                        break;
+                    case('-'):
+                        if(f==0)
+                        {
+                            daan=tt_daan;
+                            break;
+                        }
+                        daan-=t_daan;
+                        f=2;
+                        break;
+                    case('*'):
+                        if(f1==0)
+                        {
+                            daan=t_daan;
+                            break;
+                        }
+                        daan*=t_daan;
+                        f=3;
+                        break;
+                    case('/'):
+                        if(f==0)
+                        {
+                            daan=t_daan;
+                            break;
+                        }
+                        if(t_daan==0)
+                            err_mo(3);
+                        daan/=t_daan;
+                        f=4;
+                        break;
                 }
+
+
+
             }
+
+
 
             //得出答案，现在显示
             w_data('=');
@@ -211,17 +282,14 @@ void main(void)
                 key=0;
             if(l>8)
                 e=2;
-            n[f]*=10;
-            n[f]+=key;
 
             //数字增加显示
             if(key>8)
-                w_data(0x30+key-2);
+                key=key-2;
             else if(key>4)
-                w_data(0x30+key-1);
-            else
-                w_data(0x30+key);
+                key=key-1;
 
+            t[sta]=0x30+key;
 
 
             key=0;
@@ -229,6 +297,9 @@ void main(void)
             l+=1;
 
         }
+
+
+        lcd_scan();
     }
 
 
