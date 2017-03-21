@@ -8,9 +8,10 @@
 
 #include <STC89C5xRC.H>
 #include "lcd.h"
+#include <math.h>
 
 
-#define N 80
+#define N 40
 
 
 unsigned char key;
@@ -21,10 +22,12 @@ unsigned char l,e,sta;
 //错误处理函数
 void err_mo(uchar e)
 {
-    uchar i,err[]="error";
     w_data(0x01);
-    for(i=0;i<5;i++)
-        w_data(err[i]);
+    w_data('e');
+    w_data('r');
+    w_data('r');
+    w_data('o');
+    w_data('r');
     w_data(0x14);
     w_data(0x14);
     w_data(0x30+e);
@@ -35,20 +38,6 @@ void err_mo(uchar e)
 }
 
 
-//全局LCD处理
-void lcd_mo()
-{
-
-        if(sta>78)    //LCD数据溢出
-            err_mo(5);
-        else if(sta>54) //
-            w_com(0x07);
-        else if(sta>40) //
-            w_com(0x06);
-        else if(sta>14) //
-            w_com(0x07);
-
-}
 
 
 void keyscan() // 矩阵键盘 完成版
@@ -85,34 +74,37 @@ void keyscan() // 矩阵键盘 完成版
 //显示刷新函数
 void lcd_scan()
 {
+    uchar i;
     w_com(0x01);
 
-    if(sta>78)    //LCD数据溢出
+    if(sta>38)    //LCD数据溢出
+    {
         err_mo(5);
-    else if(sta>54) //
-        w_com(0x07);
-    else if(sta>40) //
-        w_com(0x06);
-    else if(sta>14) //
+        return;
+    }
+
+
+    if(sta>14) //
         w_com(0x07);
 
-    for(i=0;i<N;++)
+    for(i=0;i<N;i++)
         w_data(t[i]);
+		delayms(80);
 }
 
 void main(void)
 {
     init();
 
-    unsigned char i;
-    for(i=0;i<=N;i++)
-        t[i]=0x20;
+    for(l=0;l<=N;l++)
+        t[l]=0x20;
 
 
     l=0,e=0,sta=0;
     while(1)
     {
         keyscan();
+        main_loop:
 
 
         //加减乘除的分支
@@ -145,9 +137,8 @@ void main(void)
         //清零的分支
         else if(key==13)
         {
-            unsigned char i;
-            for(i=0;i<=N;i++)
-                t[i]=0x20;
+            for(l=0;l<=N;l++)
+                t[l]=0x20;
 
             w_com(0x01);
 
@@ -159,96 +150,111 @@ void main(void)
         //等于的分支
         else if(key==15)
         {
-            float daan,t_daan,tt_daan;
-            char f1=0,f2=0;
+            float daan[4]={0};
+            uchar fg[3]={0},t_daan,t_fg;
+            uchar tt,f_f;
+
+            t_daan=0;
+            t_fg=0;
+            f_f=0;
+
             if(l==0||e!=0)
             {
                 //输出错误
                 if(l==0)
                     e=1;
                 err_mo(e);
+                goto main_loop;
             }
 
-            daan=0;
-            t_daan=0;
-            tt_daan=0;
-            for(i=0;i<sta;i++)
+            t[sta]='=';
+            sta++;
+            for(l=0;l<sta;l++)
             {
-                switch(t[i])
+                switch(t[l])
                 {
                     case('1'):
-                        tt_daan*=10;
-                        tt_daan+=1;
+                        daan[t_daan]*=10;
+                        daan[t_daan]+=1;
                         break;
                     case('2'):
-                        tt_daan*=10;
-                        tt_daan+=2;
+                        daan[t_daan]*=10;
+                        daan[t_daan]+=2;
                         break;
                     case('3'):
-                        tt_daan*=10;
-                        tt_daan+=3;
+                        daan[t_daan]*=10;
+                        daan[t_daan]+=3;
                         break;
                     case('4'):
-                        tt_daan*=10;
-                        tt_daan+=4;
+                        daan[t_daan]*=10;
+                        daan[t_daan]+=4;
                         break;
                     case('5'):
-                        tt_daan*=10;
-                        tt_daan+=5;
+                        daan[t_daan]*=10;
+                        daan[t_daan]+=5;
                         break;
                     case('6'):
-                        tt_daan*=10;
-                        tt_daan+=6;
+                        daan[t_daan]*=10;
+                        daan[t_daan]+=6;
                         break;
                     case('7'):
-                        tt_daan*=10;
-                        tt_daan+=7;
+                        daan[t_daan]*=10;
+                        daan[t_daan]+=7;
                         break;
                     case('8'):
-                        tt_daan*=10;
-                        tt_daan+=8;
+                        daan[t_daan]*=10;
+                        daan[t_daan]+=8;
                         break;
                     case('9'):
-                        tt_daan*=10;
-                        tt_daan+=9;
-                        break;
-                    case('+'):
-                        if(f2==0)
-                            daan=tt_daan;
-                        f2=1;
-                        if(f1)
-
-                        break;
-                    case('-'):
-                        if(f==0)
-                        {
-                            daan=tt_daan;
-                            break;
-                        }
-                        daan-=t_daan;
-                        f=2;
-                        break;
-                    case('*'):
-                        if(f1==0)
-                        {
-                            daan=t_daan;
-                            break;
-                        }
-                        daan*=t_daan;
-                        f=3;
-                        break;
-                    case('/'):
-                        if(f==0)
-                        {
-                            daan=t_daan;
-                            break;
-                        }
-                        if(t_daan==0)
-                            err_mo(3);
-                        daan/=t_daan;
-                        f=4;
+                        daan[t_daan]*=10;
+                        daan[t_daan]+=9;
                         break;
                 }
+                if(t[l]=='+'||t[l]=='-'||t[l]=='*'||t[l]=='/'||t[l]=='=')
+                {
+                    switch(t[l])
+                    {
+                                case('+'): f_f=11; break;
+                                case('-'): f_f=12; break;
+                                case('*'): f_f=21; break;
+                                case('/'): f_f=22; break;
+                                case('='): f_f=0;
+                    }
+
+                    if(f_f/10>fg[t_fg]/10)
+                    {
+                        t_fg+=1;
+                        t_daan+=1;
+                        fg[t_fg]=f_f;
+                    }
+                    else
+                    {
+
+                        while(f_f/10<=fg[t_fg]/10&&fg[t_fg]!=0)
+                        {
+                            t_daan-=1;
+                            switch(fg[t_fg])
+                            {
+                                case('+'): daan[t_daan]+=daan[t_daan+1]; break;
+                                case('-'): daan[t_daan]-=daan[t_daan+1]; break;
+                                case('*'): daan[t_daan]*=daan[t_daan+1]; break;
+                                case('/'):
+                                    if(daan[t_daan+1]==0)
+                                    {
+                                        err_mo(3);
+                                        goto main_loop;
+                                    }
+                                    daan[t_daan]/=daan[t_daan+1]; break;
+                            }
+                            daan[t_daan+1]=0;
+                            t_fg-=1;
+                        }
+                        t_fg+=1;
+                        t_daan+=1;
+                        fg[t_fg]=f_f;
+                    }
+                }
+
 
 
 
@@ -257,19 +263,19 @@ void main(void)
 
 
             //得出答案，现在显示
-            w_data('=');
-//            daan=daan*100;
-            for(l=0;daan>1;l++)
+            w_com(0x80+0x40+sta);
+            w_com(0x0c);
+            w_com(0x04);
+            daan[0]*=100;
+            for(l=0;tt>1;l++)
             {
-                t=daan/1;
-                t=t%10;
-                we[l]=0x30+t;
-                daan=daan/10;
+                w_data(0x30+(char)((int)(daan[0]/pow(10,l))%10));
+                if(l==1)
+                    w_data('.');
             }
-            sta+=l;
-            lcd_mo();
-            for(;l>=0;l--)
-                w_data(we[l]);
+
+
+
 
 
 

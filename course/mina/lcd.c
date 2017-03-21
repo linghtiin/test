@@ -38,33 +38,7 @@ void w_data(uchar dat)
     en=0;
 }
 
-uchar re_data()
-{
-	uchar num;
-	rw=1;
-	rs=1;
-	en=1;
 
-	delayms(5);
-	num=lcd_data;
-	en=0;
-
-	return num;
-}
-
-uchar re_sta()
-{
-	uchar state;
-	rw=1;
-	rs=1;
-	en=1;
-
-	delayms(5);
-	state=lcd_data;
-	en=0;
-
-	return state;
-}
 
 void init()
 {
