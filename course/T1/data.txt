@@ -12,3 +12,12 @@ hg 05 15
 tt 00 95
 
 -----------------------------
+mai7
+
+12 a dsd
+15 b dsfs
+41 c fgdr
+15 d sada
+18 e fsdfd
+26 f dfsdfd
+45 g fsadfsd
