@@ -42,7 +42,6 @@ int main ()
         if(p1!=NULL)
         {
             k=p1-p;
-            printf("%d\n",k);
             if(k==-1&&p!=n+1)
                 q->r=q->r-1;
             for(j=0;j<k;j++)
