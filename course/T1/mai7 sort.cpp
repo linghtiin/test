@@ -1,15 +1,37 @@
+/*
+    结构体关键字排序
+    冒泡算法排序
+    快速排序
+
+*/
+
 #include<stdio.h>
 #include<stdlib.h>
 
 #define N 7
 
+
+
+
+
+
 typedef struct LIST
 {
-    int key;
+    int key;        //排序用关键字
     char info[20];
     char name[5];
 }List;
 
+
+
+
+
+
+
+
+
+
+//冒泡算法排序
 void bubble_sort(List l[],int n)
 {
     int i=1,j,f=1;
@@ -31,6 +53,8 @@ void bubble_sort(List l[],int n)
 
 }
 
+
+//快速排序
 void Qsort(List l[],int low,int high)
 {
     int part(List l[],int i,int j);
