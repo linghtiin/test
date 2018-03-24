@@ -1,5 +1,4 @@
 #ifndef STACK_H_INCLUDED
-#define STACK_H_INCLUDED
 
 
 
@@ -14,7 +13,7 @@ void init(SNO *top);
 void push(SNO *top,struct btnode* x);
 struct btnode* pop(SNO* top);
 
-//#else
+#else
 
 #define N 30
 

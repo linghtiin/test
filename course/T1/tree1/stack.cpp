@@ -1,6 +1,27 @@
+/*
+    堆栈实现文件
+
+void init(STA *s);
+void init(SNO *top);
+
+void           push(STA *s,struct btnode* x);
+struct btnode* pop(STA *s);
+
+void           push(SNO *top,struct btnode* x);
+struct btnode* pop(SNO* top);
+
+
+*/
+
+
 #include <stdio.h>
 #include <stdlib.h>
 #include "stack.h"
+
+
+
+
+
 
 
 void init(STA *s)
@@ -82,15 +103,6 @@ struct btnode* pop(SNO* top)
     }
     return x;
 }
-
-
-
-
-
-
-
-
-
 
 
 

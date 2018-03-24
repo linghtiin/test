@@ -1,3 +1,12 @@
+/*
+    建立二叉树
+        深度遍历
+
+
+*/
+#define STACK_H_INCLUDED
+
+
 #include <stdio.h>
 #include <stdlib.h>
 #include "stack.h"

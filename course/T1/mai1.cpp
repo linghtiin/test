@@ -1,3 +1,12 @@
+/*
+    简单成绩分析(结构体)
+
+    取得最高分
+    取得最低分
+
+
+*/
+
 #include<stdio.h>
 #include<stdlib.h>
 
