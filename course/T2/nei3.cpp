@@ -1,19 +1,26 @@
+/**     时钟类程序
+ *
+ *
+ *
+ *
+ *
+ */
 #include<iostream>
 
 using namespace std ;
 
-class clock
+class Clock
 {
 private:
     int hour,minute,second;
 public:
-    void setTime(int h1,int m1,int s1);
+    int setTime(int h1,int m1,int s1);
     void showTime();
     int checkTime();
-    void runTime();
+    int runTime();
 };
 
-void clock::setTime(int h1=0,int m1=0,int s1=0)
+int Clock::setTime(int h1=0,int m1=0,int s1=0)
 {
     int err=0;
     hour=h1;
@@ -22,50 +29,81 @@ void clock::setTime(int h1=0,int m1=0,int s1=0)
 
     err=checkTime();
     if(err>0)
-        cout<<"Time's number is out space."<<endl;
+        return -1;
 
 }
 
-void clock::showTime()
+void Clock::showTime()
 {
     cout<<"Time is :"<<endl;
     cout<<hour<<':'<<minute<<':'<<second<<endl;
 }
 
 
-int clock::checkTime()
+int Clock::checkTime()
 {
-    int err=0;
 
     if(hour<0||hour>24)
-        err=err+200;
+        return 200;
     else if(hour==24)
-        err=err+100;
+        return 100;
 
     if(minute<0||minute>60)
-        err=err+20;
+        return 20;
     else if(minute==60)
-        err=err+10;
+        return 10;
 
     if(second<0||second>60)
-        err=err+2;
+        return 2;
     else if(second==60)
-        err=err+1;
+        return 1;
 
-    return err;
+    return 0;
 }
 
 
 
-void clock::runTime()
+int Clock::runTime()
 {
-    int err;
+    int err,rnum=0;
     second++;
     err=checkTime();
-    if(err/10%10=1)
+    if(err==1)
     {
-
+        second=0;
+        minute++;
+        rnum=1;
     }
+    err=checkTime();
+    if(err/10==1)
+    {
+        minute=0;
+        hour++;
+        rnum=rnum+10;
+    }
+    err=checkTime();
+    if(err/100==1)
+    {
+        hour=0;
+        rnum=rnum+100;
+    }
+    return rnum;
 }
 
 
+int main()
+{
+    Clock c1;
+    int i=200000;
+    if(c1.setTime(12,23,11)<0)
+        cout<<"时间设置错误."<<endl;
+
+    while(i--)
+    {
+
+        if(c1.runTime()!=0)
+            c1.showTime();
+    }
+
+    return 0;
+}
