@@ -7,11 +7,22 @@ class clock
 private:
     int hour,minute,second;
 public:
+    clock(int h,int m,int s);
+    clock(clock &p);
+    ~clock();
     void setTime(int h1,int m1,int s1);
     void showTime();
     int checkTime();
     void runTime();
 };
+
+clock::clock(int h,int m,int s)
+{
+    hour=h;
+    minute=m;
+    second=s;
+}
+
 
 void clock::setTime(int h1=0,int m1=0,int s1=0)
 {
