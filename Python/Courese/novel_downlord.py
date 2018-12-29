@@ -13,9 +13,9 @@ novel_href = 'n1576cu'
 
 #soup.head.link.attrs['href']
 
-def get_novel(page,href):
+def get_index(page,href):
     
-    index_page = rq.get(page + '/' + href + '/')
+    index_page = rq.get(page + '/' + href)
     index_page.encoding = "utf-8"
     novel_soup = bs(index_page.text,'lxml')
     
@@ -47,15 +47,31 @@ def get_novel(page,href):
         Book_index.append(subox)
     Book_index = pd.DataFrame(Book_index)
     Book_Data['Index'] = Book_index
+    Book_Data['Text'] = get_text(page,Book_index)
     return Book_Data
 
 def get_chapter(page,href):
-    chapter = rq.get(page + '/' + href + '/')
+    chapter = rq.get(page + '/' + href)
     chapter.encoding = "utf-8"
     chaptersoup = bs(chapter.text,'lxml')
     
     Chapter = {}
+    Chapter['No'] = chaptersoup.find(id="novel_no").text
+    Chapter['title'] = chaptersoup.find(class_='novel_subtitle').text
     Chapter['page'] = chaptersoup.find(id="novel_honbun")
     Chapter['note'] = chaptersoup.find(id="novel_a")
     
     return Chapter
+
+def get_text(page,book_index):
+    Book_Text = []
+    for chap in book_index['Href']:
+        print('download start:' + chap)
+        Chapter = get_chapter(page,chap)
+        Book_Text.append(Chapter)
+        print('download compult.')
+    Book_Text = pd.DataFrame(Book_Text)
+    return Book_Text
+
+
+Data = get_index(page,novel_href)
