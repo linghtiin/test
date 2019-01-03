@@ -5,24 +5,35 @@ Created on Sun Dec  9 23:34:55 2018
 @author: z
 """
 
+import os
+import time
+import json
+import random
+import numpy as np
 import requests as rq
 from bs4 import BeautifulSoup as bs
 import pandas as pd
+
+headers = {'user-agent': 'my-readapp/0.1'}
 page = "https://ncode.syosetu.com"
 novel_href = 'n1576cu'
 
 #soup.head.link.attrs['href']
 
 def get_index(page,href):
-    
-    index_page = rq.get(page + '/' + href)
-    index_page.encoding = "utf-8"
-    novel_soup = bs(index_page.text,'lxml')
-    
-    Book_Data = {}
+    """ 获取书籍基本信息，目录表。 """
+    index_page = rq.get(page + '/' + href,headers=headers,timeout = (5,30))
+    if index_page.status_code == rq.codes.ok:
+        index_page.encoding = "utf-8"
+        novel_soup = bs(index_page.text,'lxml')
+    else:
+        index_page.raise_for_status()
+
     s = novel_soup.find(id = "novel_color")
+    Book_Data = {}
     Book_Data['Title'] = s.find('p',class_ = "novel_title").text
     Book_Data['Auther'] = s.find('div',class_ = "novel_writername").a.text
+    Book_Data['href'] = href
     Book_Data['EX'] = s.find('div',id = "novel_ex").text
     index = s.find('div',class_ = 'index_box')
     Book_index = []
@@ -46,32 +57,66 @@ def get_index(page,href):
             continue
         Book_index.append(subox)
     Book_index = pd.DataFrame(Book_index)
-    Book_Data['Index'] = Book_index
-    Book_Data['Text'] = get_text(page,Book_index)
-    return Book_Data
+    Book_index['Downloaded'] = np.zeros(len(Book_index),dtype=int)
+    return Book_Data,Book_index
 
 def get_chapter(page,href):
-    chapter = rq.get(page + '/' + href)
-    chapter.encoding = "utf-8"
-    chaptersoup = bs(chapter.text,'lxml')
+    """ 获取章节文本。 """
+    trydo = 10
+    while 1:
+        chapter = rq.get(page + '/' + href,headers=headers,timeout = (30,30))
+        if chapter.status_code == rq.codes.ok:
+            chapter.encoding = "utf-8"
+            chaptersoup = bs(chapter.text,'lxml')
+            break
+        else:
+            trydo -= 1
+            if trydo <= 0:
+                chapter.raise_for_status()
+            time.sleep(60)
     
     Chapter = {}
-    Chapter['No'] = chaptersoup.find(id="novel_no").text
+    Chapter['No'] = chaptersoup.find(id="novel_no").text.split('/')[0]
     Chapter['title'] = chaptersoup.find(class_='novel_subtitle').text
-    Chapter['page'] = chaptersoup.find(id="novel_honbun")
-    Chapter['note'] = chaptersoup.find(id="novel_a")
+    Chapter['page'] = chaptersoup.find(id="novel_honbun").text
+    Chapter['page'] = pd.Series(Chapter['page'].strip().split('\n\n\n')[1:])
     
+    if chaptersoup.find(id="novel_a") == None:
+        Chapter['note'] = None
+    else:
+        Chapter['note'] = chaptersoup.find(id="novel_a").text
     return Chapter
 
-def get_text(page,book_index):
-    Book_Text = []
-    for chap in book_index['Href']:
-        print('download start:' + chap)
-        Chapter = get_chapter(page,chap)
-        Book_Text.append(Chapter)
-        print('download compult.')
-    Book_Text = pd.DataFrame(Book_Text)
-    return Book_Text
-
-
-Data = get_index(page,novel_href)
+def save_book(workpath,page,novel_href):
+    """ 保存书籍。并根据信息下载章节文本。（未完成） """
+    os.mkdir(novel_href)
+    novelpath = workpath + "\\" + novel_href
+    Book_Info,Book_index = get_index(page,novel_href)
+    #保存书籍信息
+    with open(novelpath + r'\Info.txt','w') as f:
+        f.write(json.dumps(Book_Info))
+    excelwriter = pd.ExcelWriter(novelpath + r'\Index.xlsx')
+    Book_index.to_excel(excelwriter,'Index')
+    excelwriter.save()
+  
+    excelreader = pd.ExcelFile(excelwriter.path)
+    with pd.read_excel(excelreader,'Index') as exc:
+        Book_index = exc
+    
+    
+    
+workpath = os.getcwd()
+    
+    #保存文本,非格式化
+#    with open(novelpath + r'\Info.txt','w') as f:
+#        f.write(Book_Info['Title'])
+#        f.write('\n\n')
+#        f.write('作者：' + Book_Info['Auther'])
+#        f.write('\n\n')
+#        f.write(Book_Info['EX'])
+#        f.write('\n\n\n\n\n')
+#    for i in book_index.index:
+#        Chapter = get_chapter(page,Book_index.Href[i])
+#        with open(novelpath + r'\Info.txt','a') as f:
+#            f.write(jso)
+#            f.write('\n\n\n\n')
