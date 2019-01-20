@@ -117,7 +117,7 @@ def save_book(workpath,page,novel_href):
     #检查已下载目录
     excelwriter = pd.ExcelWriter(novelpath + r'\Index.xlsx')
     temp_index = pd.read_excel(novelpath + r'\Index.xlsx','Index')
-    if Book_index[['Subnum','Update','Spandate']] != temp_index:
+    if Book_index[['Subnum','Update','Spandate']] != temp_index[['Subnum','Update','Spandate']]:
         Book_index['Downloaded'] = np.zeros(len(Book_index),dtype=int)
         Book_index.to_excel(excelwriter,'Index',na_rep= 'N/A')
         excelwriter.save()
