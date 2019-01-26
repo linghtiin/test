@@ -107,6 +107,7 @@ def save_book(workpath,page,novel_href):
         os.mkdir(novel_href)
     except WindowsError as e:
         print('文件夹已创建。')
+        print(e)
         
     novelpath = workpath + "\\" + novel_href
     Book_Info,Book_index = get_index(page,novel_href)
@@ -115,30 +116,46 @@ def save_book(workpath,page,novel_href):
         f.write(json.dumps(Book_Info))
     
     #检查已下载目录
-    excelwriter = pd.ExcelWriter(novelpath + r'\Index.xlsx')
-    temp_index = pd.read_excel(novelpath + r'\Index.xlsx','Index')
-    if Book_index[['Subnum','Update','Spandate']] != temp_index[['Subnum','Update','Spandate']]:
+    excelpath = novelpath + r'\Index.xlsx'
+    try:
+        temp_index = pd.read_excel(excelpath,'Index')
+        f = (Book_index['Update'] == temp_index['Update']).all() 
+        f = f & (Book_index['Subnum'] == temp_index['Subnum']).all()
+        if not f :
+            excelwriter = pd.ExcelWriter(excelpath)
+            Book_index['Downloaded'] = np.zeros(len(Book_index),dtype=int)
+            Book_index.to_excel(excelwriter,'Index',na_rep= 'N/A')
+            excelwriter.save()
+            Text = pd.DataFrame()
+        else:
+            Book_index = temp_index
+            Text = pd.read_excel(excelpath,'Text')
+    except FileNotFoundError as e:
+        print('there hasn`t excel file.')
+        print(e)
+        excelwriter = pd.ExcelWriter(excelpath)
         Book_index['Downloaded'] = np.zeros(len(Book_index),dtype=int)
         Book_index.to_excel(excelwriter,'Index',na_rep= 'N/A')
         excelwriter.save()
-    else:
-        Book_index = temp_index
+        Text = pd.DataFrame()
+
+        
     #保存文本，断点续传
-    while download_text(Book_index,excelwriter):
+    while download_text(Book_index,Text,excelpath):
         excelwriter.save()
  
-def download_text(Book_index,excelwriter):
+def download_text(Book_index,Text,excelpath):
     """ 文本下载，存储到Excel文件，更新index。 """
-    Text = pd.DataFrame()
     Book_index['Note'] = None
     for i in Book_index[Book_index['Downloaded'] == 0].Subnum:
-        Chapter = get_chapter(page,Book_index.Href[i])
+        Chapter = get_chapter(page,Book_index.at[i-1,'Href'])
+        excelwriter = pd.ExcelWriter(excelpath)
         if Chapter != None:
             chap = Chapter['page']
             Text[Chapter['No']] = chap
             note = Chapter['note']
-            Book_index.loc[i]['Note'] = note
-            Book_index.loc[i]['Downloaded'] = 1
+            Book_index.at[i-1,'Note'] = note
+            Book_index.at[i-1,'Downloaded'] = 1
             Text.to_excel(excelwriter,sheet_name='Text')
             Book_index.to_excel(excelwriter,'Index',na_rep= 'N/A')
         else:
