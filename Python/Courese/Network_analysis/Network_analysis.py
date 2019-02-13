@@ -5,6 +5,7 @@ Created on Wed Feb 13 18:31:13 2019
 @author: z
 """
 
+import numpy as np
 import networkx as nx
 import matplotlib.pyplot as plt
 from scipy.stats import bernoulli
@@ -38,3 +39,32 @@ def plot_degree_distribution(G):
 G1 = er_graph(500,0.08)
 plot_degree_distribution(G1)
 
+#印度村庄人脉网络
+A1 = np.loadtxt("adj_allVillageRelationships_vilno_1.csv",delimiter=",")
+A2 = np.loadtxt("adj_allVillageRelationships_vilno_2.csv",delimiter=",")
+
+G1 = nx.Graph(A1)
+G2 = nx.Graph(A2)
+
+def basic_net_stats(G):
+    degree_sequence = [d for n,d in G.degree()]    
+    print("Nunber of nodes: %d" % G.number_of_nodes())
+    print("Nunber of edges: %d" % G.number_of_edges())
+    print("Average degree: %.2f" % np.mean(degree_sequence))
+    
+basic_net_stats(G1)
+basic_net_stats(G2)
+
+#最大连接组件
+gen = nx.connected_component_subgraphs(G1)
+
+G1_LCC = max(nx.connected_component_subgraphs(G1),key=len)
+G2_LCC = max(nx.connected_component_subgraphs(G2),key=len)
+
+plt.figure()
+nx.draw(G1_LCC,node_size=20,node_color="red",edge_color="gray")
+len(G1_LCC)/len(G1)
+
+plt.figure()
+nx.draw(G2_LCC,node_size=20,node_color="green",edge_color="gray")
+len(G2_LCC)/len(G2)
