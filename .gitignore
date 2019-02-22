@@ -27,12 +27,22 @@
 *.exe
 *.out
 *.app
-*.pdf
 
+#i defitent
+*.pdf
+*.txt
+*.depend
+*.csv
+*.js
+*.json
+*.layout
+*.rc
+*.res
+*.xml
 
 /paper/何泽隆 两则程序源码.rar
-course/T2/complex/complex.depend
 /Python/Courese/*/n1576cu
 /Python/Courese/*/Books
 Python/PythonScript.lnk
 /Python/lkz-master
+
