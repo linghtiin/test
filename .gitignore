@@ -27,6 +27,9 @@
 *.exe
 *.out
 *.app
+*.pdf
+
+
 /paper/何泽隆 两则程序源码.rar
 course/T2/complex/complex.depend
 /Python/Courese/*/n1576cu
