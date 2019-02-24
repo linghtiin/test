@@ -5,11 +5,12 @@ Created on Sat Feb 23 11:54:55 2019
 @author: z
 """
 import pygame
-
-from ship import Ship
-from settings import Settings 
 from pygame.sprite import Group
+
 import game_functions as gf
+from settings import Settings
+from ship import Ship
+
 
 def run_game():
     """" 运行游戏。 """
@@ -21,7 +22,7 @@ def run_game():
         (ai_setting.screen_width,ai_setting.screen_height))
     
     #创建游戏物体
-    ship = Ship(screen)
+    ship = Ship(ai_setting, screen)
     bullets = Group()
     
     #临时变量
@@ -43,4 +44,3 @@ def run_game():
     
 #运行测试    
 run_game()
-    
