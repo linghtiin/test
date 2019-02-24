@@ -4,7 +4,7 @@ Created on Sat Feb 23 19:05:12 2019
 
 @author: z
 """
-
+import os
 import pygame
 
 
@@ -16,9 +16,10 @@ class Ship():
         self.screen = screen
         self.ai_settings = ai_settings
         
-        #加载飞船图像与碰撞体
-        self.image = pygame.image.load("image/ship.bmp")
-        self.rect = pygame.image.get_rect()
+        #加载飞船图像与碰撞体'.//image//ship.bmp'
+        self.image = pygame.image.load(os.path.join('image', 'ship.bmp'))
+        #self.rect = pygame.image.get_rect()
+        self.rect = pygame.Rect(0, 0, 128, 128)     #test
         self.screen_rect = screen.get_rect()
         
         #初始位置
@@ -46,7 +47,8 @@ class Ship():
         
     def blitme(self):
         """ 在指定位置绘制飞船"""
-        self.screen.blit(self.image, self.rect)
+        pygame.draw.rect(self.screen, (0, 255, 0), self.rect)  #test
+        #self.screen.blit(self.image, self.rect)
         
         
         
