@@ -17,9 +17,10 @@ class Ship():
         self.ai_settings = ai_settings
         
         #加载飞船图像与碰撞体'.//image//ship.bmp'
-        self.image = pygame.image.load(os.path.join('image', 'ship.bmp'))
-        #self.rect = pygame.image.get_rect()
-        self.rect = pygame.Rect(0, 0, 128, 128)     #test
+        #self.image = pygame.image.load("G:\Program\Git\my git\test\Python\Sprite\image\ship.bmp")
+        #self.image = pygame.image.load(os.path.join('image', 'ship.bmp'))
+        #self.rect = self.image.get_rect()
+        self.rect = pygame.Rect(0, 0, 26, 24)     #test
         self.screen_rect = screen.get_rect()
         
         #初始位置
@@ -50,6 +51,9 @@ class Ship():
         pygame.draw.rect(self.screen, (0, 255, 0), self.rect)  #test
         #self.screen.blit(self.image, self.rect)
         
+    def center_ship(self):
+        """ 使飞船在屏幕上居中 """
+        self.center = self.screen_rect.centerx
         
         
         
