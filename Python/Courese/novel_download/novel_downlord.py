@@ -6,33 +6,110 @@ Created on Sun Dec  9 23:34:55 2018
 """
 
 import os
+import bs4
 import time
 import json
 import random
 import numpy as np
+import pandas as pd
 import requests as rq
 from bs4 import BeautifulSoup as bs
-import pandas as pd
 
 
 #soup.head.link.attrs['href']
+###############################################################################
 
-def get_index(page,href):
-    """ 获取书籍基本信息，目录表。 """
-    index_page = rq.get(page + '/' + href,headers=headers,timeout = (5,30))
-    if index_page.status_code == rq.codes.ok:
-        index_page.encoding = "utf-8"
-        novel_soup = bs(index_page.text,'lxml')
-    else:
-        index_page.raise_for_status()
+def check_book_index(workpath, page_href, novel_code, header):
+    """ 保存书籍。并根据信息下载章节文本。（未完成） """
 
+    novelpath = create_folder(workpath, novel_code)
+    PageSoup = get_PageSoup(page_href, novel_code, header)
+
+    Book_Info = create_book_info(PageSoup)
+    Book_index = create_book_index(PageSoup)
+    
+    #保存书籍信息
+    save_info(novelpath, Book_Info)
+
+    #检查已下载目录
+    excelpath = novelpath + '\\' + novel_code + '.xlsx'
+    Book_index = save_index(excelpath, Book_index)
+    
+    flag = Book_index['Downloaded'].all()
+    if not flag:
+        return novel_code
+    
+    return None
+
+def create_folder(workpath, novel_code):
+    """ 创建文件夹，返回文件储存路径 """
+    try:
+        os.mkdir(novel_code)
+    except WindowsError as e:
+        print('Error!!文件夹已存在。')
+        print(e)
+    finally:
+        print('创建文件夹完成。')
+    novelpath = workpath + '\\' + novel_code
+    return novelpath
+
+def get_PageSoup(page_href, pathref, header):
+    """ 根据网站与目录路径获取网页Soup """
+    
+    if header == None:
+        header = {'user-agent': None}    
+        
+    trydo = 10
+	#获取网页，捕获错误+验证状态码
+    while True:                
+        try:
+            Page = rq.get(page_href + '/' + pathref,headers=header,timeout = (30,30))
+        except rq.exceptions.ConnectTimeout as e :
+            print('ConnectTimeout!!\n\tError code:' + str(e.errno))
+            error_download(e)
+            print('Well be waiting 5 min to try again.')
+            time.sleep(5*60)
+            return None
+        except rq.exceptions.ReadTimeout as e :
+            print('ReadTimeout!!\n\tError code:' + str(e.errno))
+            error_download(e)
+            print('Well be waiting 5 min to try again.')
+            time.sleep(5*60)
+        except :
+            print('Unknow Error!!!')
+            print('Will stop download.')
+            raise
+        
+        if Page.status_code == rq.codes.ok:
+            Page.encoding = "utf-8"
+            PageSoup = bs(Page.text,'lxml')
+            break
+        else:
+            trydo -= 1
+            if trydo <= 0:
+                print('status code error!!\n\tcode is ' + str(Page.status_code))
+                print('Will be stop download.')
+                Page.raise_for_status()
+            print('status code error!!')
+            print('Will be try again.')
+            time.sleep(10)
+		
+    return PageSoup
+
+def create_book_info(novel_soup):
+    """ 从网页中提取基本书籍信息 """
     s = novel_soup.find(id = "novel_color")
-    Book_Data = {}
-    Book_Data['Title'] = s.find('p',class_ = "novel_title").text
-    Book_Data['Auther'] = s.find('div',class_ = "novel_writername").a.text
-    Book_Data['href'] = href
-    Book_Data['EX'] = s.find('div',id = "novel_ex").text
-    index = s.find('div',class_ = 'index_box')
+    Book_Info = {}
+    Book_Info['Title'] = s.find('p',class_ = "novel_title").text
+    Book_Info['Auther'] = s.find('div',class_ = "novel_writername").a.text
+    Book_Info['EX'] = s.find('div',id = "novel_ex").text
+    Book_Info['update'] = ''
+    Book_Info['begindate'] = ''
+    return Book_Info
+
+def create_book_index(novel_soup):
+    """ 从网页中提取书籍目录 """
+    index = novel_soup.find('div',class_ = 'index_box')
     Book_index = []
     Chapter = ''
     sub_num = 1
@@ -51,110 +128,89 @@ def get_index(page,href):
                 subox['Spandate'] = sub.select('.long_update')[0].span.attrs['title']
             sub_num += 1
         else:
-            continue
+            pass
         Book_index.append(subox)
-    Book_index = pd.DataFrame(Book_index)
-    return Book_Data,Book_index
+    return pd.DataFrame(Book_index)
 
-def get_chapter(page,href):
-    """ 获取章节文本。 """
-    trydo = 10
-    while 1:                #网页交互，验证状态码+超时处理
-        try:
-            chapter = rq.get(page + '/' + href,headers=headers,timeout = (30,30))
-        except rq.exceptions.ConnectTimeout as e :
-            print('ConnectTimeout!!\n\tError code:' + str(e.errno))
-            print('Save the downloaded text.')
-            error_download()
-            print('Well be waiting 5 min to try again.')
-            time.sleep(5*60)
-            return None
-        except rq.exceptions.ReadTimeout as e :
-            print('ReadTimeout!!\n\tError code:' + str(e.errno))
-            print('Save the downloaded text.')
-            error_download()
-            print('Well be waiting 5 min to try again.')
-            time.sleep(5*60)
-            
-        
-        if chapter.status_code == rq.codes.ok:
-            chapter.encoding = "utf-8"
-            chaptersoup = bs(chapter.text,'lxml')
-            break
-        else:
-            trydo -= 1
-            if trydo <= 0:
-                print('status code error!!\n\tcode is ' + str(chapter.status_code))
-                chapter.raise_for_status()
-            time.sleep(5)
-    
-    Chapter = {}
-    Chapter['No'] = chaptersoup.find(id="novel_no").text.split('/')[0]
-    Chapter['title'] = chaptersoup.find(class_='novel_subtitle').text
-    Chapter['page'] = chaptersoup.find(id="novel_honbun").text
-    Chapter['page'] = pd.Series(Chapter['page'].strip().split('\n\n\n'))
-    Chapter['page'].loc[0] = Chapter['page'].loc[0] + '\t' + str(Chapter['title'])
-    
-    if chaptersoup.find(id="novel_a") == None:
-        Chapter['note'] = None
-    else:
-        Chapter['note'] = chaptersoup.find(id="novel_a").text
-    return Chapter
-
-def save_book(workpath,page,novel_href):
-    """ 保存书籍。并根据信息下载章节文本。（未完成） """
-    try:
-        os.mkdir(novel_href)
-    except WindowsError as e:
-        print('文件夹已创建。')
-        print(e)
-        
-    novelpath = workpath + "\\" + novel_href
-    Book_Info,Book_index = get_index(page,novel_href)
-    #保存书籍信息
-    with open(novelpath + r'\Info.txt','w') as f:
+def save_info(novelpath, Book_Info):
+    """ 保存书籍信息 """
+    with open(novelpath + '\\Info.txt','w') as f:
         f.write(json.dumps(Book_Info))
     
-    #检查已下载目录
-    excelpath = novelpath + r'\Index.xlsx'
+def save_index(excelpath, Book_index):
+    """ 保存、更新小说目录 """
+    
+    Book_index['Downloaded'] = np.zeros(len(Book_index),dtype=int)
+    Book_index['Note'] = None       #未测试的代码
     try:
         temp_index = pd.read_excel(excelpath,'Index')
-        f = (Book_index['Update'] == temp_index['Update']).all() 
-        f = f & (Book_index['Subnum'] == temp_index['Subnum']).all()
-        if not f :
-            excelwriter = pd.ExcelWriter(excelpath)
-            Book_index['Downloaded'] = np.zeros(len(Book_index),dtype=int)
-            Book_index.to_excel(excelwriter,'Index',na_rep= 'N/A')
-            excelwriter.save()
-            Text = pd.DataFrame()
-        else:
-            Book_index = temp_index
-            Text = pd.read_excel(excelpath,'Text')
-    except FileNotFoundError as e:
-        print('there hasn`t excel file.')
-        print(e)
+    except FileNotFoundError :      #文件未创建
+        print('There hasn`t excel file.')
         excelwriter = pd.ExcelWriter(excelpath)
-        Book_index['Downloaded'] = np.zeros(len(Book_index),dtype=int)
         Book_index.to_excel(excelwriter,'Index',na_rep= 'N/A')
         excelwriter.save()
-        Text = pd.DataFrame()
+        return Book_index
 
+    #书籍目录有更新
+    # for i in Book_index.index:
+        # if Book_index.loc[i,'Spandate'] == temp_index.loc[i,'Spandate']:
+            # Book_index.loc[i,'Downloaded'] = 1
+        # else:
+            # pass
+      
+    excelwriter = pd.ExcelWriter(excelpath)
+    Book_index.to_excel(excelwriter,'Index',na_rep= 'N/A')
+    excelwriter.save()
+    return Book_index
+
+###############################################################################
+
+def create_chapter(novel_soup):
+    """ 获取章节文本。 """
+    
+    s = novel_soup.find(id="novel_color")
+    Chapter = {}
+    Chapter['No'] = s.find(id="novel_no").text.split('/')[0]
+    Chapter['subtitle'] = s.find(class_='novel_subtitle').text
+    Chapter['chapter_title'] = novel_soup.find(class_="chapter_title")
+    Chapter['Text'] = str_chapter(s.find(id="novel_honbun"))
+    
+    if s.find(id="novel_a") == None:
+        Chapter['note'] = None
+    else:
+        Chapter['note'] = s.find(id="novel_a").text
+    return Chapter
+    
+def str_chapter(soupText):
+    """ 章节文本序列化处理，段落划分 """
+    Text = []
+    for Len in soupText.children:
+        if type(Len) == bs4.element.Tag:
+            if Len.find("br") == bs4.element.Tag:
+                Text.append("\n")
+            else:
+                Text.append(Len.text)
+    return pd.Series(Text)
         
-    #保存文本，断点续传
-    while download_text(Book_index,Text,excelpath):
-        excelwriter.save()
- 
-def download_text(Book_index,Text,excelpath):
+
+###############################################################################
+    
+def download_text(page_href, Indexpath, header):
     """ 文本下载，存储到Excel文件，更新index。 """
-    Book_index['Note'] = None
+    #读取书籍目录
+    Book_index = pd.read_excel(Indexpath, 'Index')
+    #检测已下载章节
+    if len(Book_index[Book_index['Downloaded'] == 1]):
+        Text = pd.read_excel(Indexpath, 'Text')
+    else:
+        Text = pd.DataFrame()
+    #遍历未下载章节
     for i in Book_index[Book_index['Downloaded'] == 0].Subnum:
-        Chapter = get_chapter(page,Book_index.at[i-1,'Href'])
-        excelwriter = pd.ExcelWriter(excelpath)
+        Chapter = create_chapter(get_PageSoup(page_href, Book_index.at[i-1,'Href'], header))
+        excelwriter = pd.ExcelWriter(Indexpath)
         if Chapter != None:
-            chap = Chapter['page']
-            Text[Chapter['No']] = chap
-            note = Chapter['note']
-            Book_index.at[i-1,'Note'] = note
+            Text[Chapter['No']] = Chapter['Text']
+            Book_index.at[i-1,'Note'] = Chapter['note']
             Book_index.at[i-1,'Downloaded'] = 1
             Text.to_excel(excelwriter,sheet_name='Text')
             Book_index.to_excel(excelwriter,'Index',na_rep= 'N/A')
@@ -165,29 +221,24 @@ def download_text(Book_index,Text,excelpath):
         time.sleep(random.random()*4 + 2)
     return 0        #完成下载，跳出循环
 
-def error_download():
+def error_download(e):
     pass
     
-workpath = os.getcwd()
-headers = {'user-agent': 'my-readapp/0.1'}
-page = "https://ncode.syosetu.com"
-novel_href = 'n1576cu'
 
-save_book(workpath,page,novel_href)
+if __name__ == "__main__":
 
-#    excelreader = pd.ExcelFile(novelpath + r'\Index.xlsx')
-#    with pd.read_excel(excelreader,'Index') as exc:
-#        Book_index = exc   
-    #保存文本,非格式化
-#    with open(novelpath + r'\Info.txt','w') as f:
-#        f.write(Book_Info['Title'])
-#        f.write('\n\n')
-#        f.write('作者：' + Book_Info['Auther'])
-#        f.write('\n\n')
-#        f.write(Book_Info['EX'])
-#        f.write('\n\n\n\n\n')
-#    for i in book_index.index:
-#        Chapter = get_chapter(page,Book_index.Href[i])
-#        with open(novelpath + r'\Info.txt','a') as f:
-#            f.write(jso)
-#            f.write('\n\n\n\n')
+    workpath = os.getcwd()
+    headers = {'user-agent': 'my-readapp/0.1'}
+    page_href = "https://ncode.syosetu.com"
+    novel_code = 'n9669bk'
+
+    temp_href = '/n9669bk/1/'
+	#下载、更新书籍目录
+    # undownloadlist = check_book_index(workpath, page_href, novel_code, headers)
+    undownloadlist = True
+	#根据目录下载文本
+    if undownloadlist:
+        Indexpath = workpath + '\\' + novel_code + '\\' + novel_code + '.xlsx'
+        download_text(page_href, Indexpath, headers)
+
+
