@@ -2,12 +2,12 @@
 #define LCD_H_INCLUDED
 
 
-//Í·ÎÄ¼ş°üº¬
+//å¤´æ–‡ä»¶åŒ…å«
 // #include<reg51.H>
 #include <STC89C5xRC.H>
 
 
-//ÖØ¶¨Òå
+//é‡å®šä¹‰
 #ifndef uchar
 #define uchar unsigned char
 #endif
@@ -16,7 +16,7 @@
 #define uint unsigned int
 #endif
 
-//PIN¿Ú¶¨Òå
+//PINå£å®šä¹‰
 #define lcd_data P0
 #define keyline P1
 sbit en=P2^7;
@@ -25,7 +25,7 @@ sbit rs=P2^6;
 
 
 
-//º¯ÊıÉùÃ÷
+//å‡½æ•°å£°æ˜
 void delayms(uint xms);
 void keyscan();
 void init();
