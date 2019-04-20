@@ -55,9 +55,9 @@ def update_screen(ai_settings, screen, ship, alines, bullets):
     for bullet in bullets.sprites():
         bullet.draw_bullet()
     ship.blitme()
-    #alines.draw(screen)
-    for aline in alines.sprites():
-        aline.blitme()
+    alines.draw(screen)
+#    for aline in alines.sprites():
+#        aline.blitme()
     
     #刷新屏幕
     pygame.display.flip()
@@ -149,7 +149,7 @@ def update_bullet(ai_settings, screen, alines, bullets):
 def check_bullet_alien_collisions(ai_settings, screen, alines, bullets):
     """ 检测外星人与子弹的碰撞 """
     #删除外星人与子弹
-    collisions = pygame.sprite.groupcollide(bullets, alines, False, True)
+    collisions = pygame.sprite.groupcollide(bullets, alines, True, True)
     
     if len(alines) == 0:
         bullets.empty()

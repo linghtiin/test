@@ -47,7 +47,8 @@ def run_game():
     
     
     
-    
+def test_game():
+    """ 测试函数 """
     
     
 #运行测试    

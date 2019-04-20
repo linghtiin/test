@@ -16,9 +16,9 @@ class Aline(Sprite):
         self.ai_settings = ai_settings
         
         #加载图像
-#        self.image = pygame.image.load("")
-#        self.rect = pygame.image.get_rect()
-        self.rect = pygame.Rect(0, 0, 20, 20)
+        self.image = pygame.image.load(r".\image\Ailne_1.png")
+        self.rect = self.image.get_rect()
+        #self.rect = pygame.Rect(0, 0, 20, 20)
         
         #初始化位置
         self.rect.x = self.rect.width
@@ -29,8 +29,8 @@ class Aline(Sprite):
         
     def blitme(self):
         """ 外星人绘制 """
-#        self.screen.blit(self.screen, self.rect)
-        pygame.draw.rect(self.screen, (255, 0, 0), self.rect)
+        self.screen.blit(self.screen, self.rect)
+#        pygame.draw.rect(self.screen, (255, 0, 0), self.rect)
         
         
     def update(self):
