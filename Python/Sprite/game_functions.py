@@ -36,8 +36,23 @@ def check_keyup_even(even, ship):
     elif even.key == pygame.K_LEFT:
         ship.moving_left = False
     
+def check_play_button(ai_settings, screen, alines, bullets, ship, stats, 
+                      play_button, mouse_x, mouse_y):
+    """ 鼠标点击 """
+    button_clicked = play_button.rect.collidepoint(mouse_x, mouse_y)
+    if button_clicked and not stats.game_active:
+        stats.reset_stats()
+        stats.game_active = True
+        pygame.mouse.set_visible(False)
+        
+        alines.empty()
+        bullets.empty()
+        ai_settings.initialize_dynamic_settings()
+        creat_fleet(ai_settings, screen, alines)
+        ship.center_ship()
 
-def check_events(ai_settings, screen, ship, bullets):
+def check_events(ai_settings, screen, alines, bullets, ship, stats,
+                 play_button):
     """ 游戏事件响应。 """
     for even in pygame.event.get():
         if even.type == pygame.QUIT:
@@ -46,9 +61,14 @@ def check_events(ai_settings, screen, ship, bullets):
             check_keydown_even(even, ai_settings, screen, ship, bullets)
         elif even.type == pygame.KEYUP:
             check_keyup_even(even, ship)
+        elif even.type == pygame.MOUSEBUTTONDOWN:
+            mouse_x, mouse_y = pygame.mouse.get_pos()
+            check_play_button(ai_settings, screen, alines, bullets, ship, 
+                              stats, play_button, mouse_x, mouse_y)
 
     
-def update_screen(ai_settings, screen, ship, alines, bullets):
+def update_screen(ai_settings, screen, stats, ship, alines, bullets,
+                  play_button, sb):
     """ 屏幕更新。 """
     #重绘屏幕
     screen.fill(ai_settings.bg_color)
@@ -56,9 +76,13 @@ def update_screen(ai_settings, screen, ship, alines, bullets):
         bullet.draw_bullet()
     ship.blitme()
     alines.draw(screen)
+    sb.show_score()
 #    for aline in alines.sprites():
 #        aline.blitme()
     
+    if not stats.game_active:
+        play_button.draw_button()
+        
     #刷新屏幕
     pygame.display.flip()
     
@@ -124,6 +148,7 @@ def ship_hit(ai_settings, stats, screen, ship, alines, bullets):
         sleep(0.5)
     else:
         stats.game_active = False
+        pygame.mouse.set_visible(True)
         print("Game over !!!")
 
      
@@ -138,21 +163,29 @@ def update_alines(ai_settings, stats, screen, ship, alines, bullets):
         ship_hit(ai_settings, stats, screen, ship, alines, bullets)
     check_alien_buttom(ai_settings, stats, screen, ship, alines, bullets)
     
-def update_bullet(ai_settings, screen, alines, bullets):
+def update_bullet(ai_settings, screen, alines, bullets,
+                  stats, sb):
     """ 全局子弹更新，控制 """
     bullets.update()
     for bullet in bullets.copy():
         if bullet.rect.bottom <= 0:
             bullets.remove(bullet)
-    check_bullet_alien_collisions(ai_settings, screen, alines, bullets)
+    check_bullet_alien_collisions(ai_settings, screen, alines, bullets,
+                                  stats, sb)
    
-def check_bullet_alien_collisions(ai_settings, screen, alines, bullets):
+def check_bullet_alien_collisions(ai_settings, screen, alines, bullets,
+                                  stats, sb):
     """ 检测外星人与子弹的碰撞 """
     #删除外星人与子弹
     collisions = pygame.sprite.groupcollide(bullets, alines, True, True)
+    if collisions:
+        for aliens in collisions.values():
+            stats.score += ai_settings.alien_points * len(aliens)
+        sb.prep_score()
     
     if len(alines) == 0:
         bullets.empty()
+        ai_settings.increase_speed()
         creat_fleet(ai_settings, screen, alines)
         
 def check_alien_buttom(ai_settings, stats, screen, ship, alines, bullets):

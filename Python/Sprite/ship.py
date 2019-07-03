@@ -4,7 +4,6 @@ Created on Sat Feb 23 19:05:12 2019
 
 @author: z
 """
-import os
 import pygame
 
 
