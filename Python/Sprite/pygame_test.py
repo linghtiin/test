@@ -38,13 +38,13 @@ def run_game():
     #游戏主循环
     while True:
         
-        gf.check_events(ai_setting, screen, alines, bullets, ship, stats,
+        gf.check_events(ai_setting, screen, alines, bullets, ship, stats, sb,
                         play_button)
         
         if stats.game_active:
             ship.update()
             gf.update_bullet(ai_setting, screen, alines, bullets, stats, sb)
-            gf.update_alines(ai_setting, stats, screen, ship, alines, bullets)
+            gf.update_alines(ai_setting, stats, sb, screen, ship, alines, bullets)
         
         gf.update_screen(ai_setting, screen, stats, ship, alines, bullets,
                          play_button, sb)

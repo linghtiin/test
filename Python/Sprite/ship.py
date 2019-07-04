@@ -5,13 +5,14 @@ Created on Sat Feb 23 19:05:12 2019
 @author: z
 """
 import pygame
+from pygame.sprite import Sprite
 
-
-class Ship():
+class Ship(Sprite):
     """ 飞船类 """
     
     def __init__(self, ai_settings, screen):
         """ 初始化飞船 """
+        super(Ship, self).__init__()
         self.screen = screen
         self.ai_settings = ai_settings
         

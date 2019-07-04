@@ -20,10 +20,10 @@ class Settings():
         self.ship_limit = 3
         
         #子弹
-        self.bullet_width = 500
+        self.bullet_width = 10
         self.bullet_height = 15
         self.bullet_color = 60, 60, 60
-        self.bullet_allowed = 5
+        self.bullet_allowed = 4
         
         #外星人
         self.fleet_drop_speed =10
@@ -32,7 +32,7 @@ class Settings():
         #游戏速度
         self.speedup_scale = 1.1
         
-        self.initialize_dynamic_settings(self)
+        self.initialize_dynamic_settings()
         
     def initialize_dynamic_settings(self):
         """  """
