@@ -65,7 +65,7 @@ class My_sqlconnecter():
         self._Session = sessionmaker(bind=self.engine) # 指定引擎
         self.session = self._Session()
         self.ncode = None
-        self.state = 3
+        self.state = '连载'
         
     def disconnect(self):
         """ 关闭连接 """
@@ -76,28 +76,20 @@ class My_sqlconnecter():
     def _add_info(self,info):
         """ 添加info """
 
-        if info['State'] == 0:
-            _state = '连载'
+        if info['State'] == '连载':
             _enddate = None
-        elif info['State'] == 1:
-            _state = '完结'
-            _enddate = info['update']
-        elif info['State'] == 2:
-            _state = '中止更新'
-            _enddate = info['update']
-        elif info['State'] == 3:
-            _state = '其他'
+        else :
             _enddate = info['update']
             
         self.ncode = info['ncode']
-        self.state = _state
+        self.state = info['State']
         temp = Novel_info(ncode= info['ncode'],
                           Title= info['Title'],
                           Auther= info['Auther'],
                           StartDate= info['begindate'],
                           EndDate=_enddate,
                           UpDate= info['update'],
-                          State = _state)
+                          State = info['State'])
         self.session.add(temp)
         try:
             self.session.commit()
@@ -151,12 +143,19 @@ class My_sqlconnecter():
         
     def read_info(self, ncode):
         """ 获取书籍更新时间 """
-        return self.session.query(Novel_info).filter(Novel_info.ncode == ncode).one()
+        try:
+            result = self.session.query(Novel_info).filter(Novel_info.ncode == ncode).one()
+        except exc.NoResultFound:
+            result = None
+        return result
     
     def read_index(self, ncode):
         """ 获取目录更新时间 """
-        return self.session.query(Novel_index).filter(Novel_index.ncode == ncode).all()
-    
+        try:
+            result = self.session.query(Novel_index).filter(Novel_index.ncode == ncode).all()
+        except exc.NoResultFound:
+            result = None
+        return result            
     
     def update_info(self, info):
         """ 更新info """
@@ -272,7 +271,7 @@ if __name__ == '__main__':
 #    my_con._add_index(box['index'][1])
     
 #    my_con._add_text(box['text'][0])
-    my_con.disconnect()
+#    my_con.disconnect()
     
 
 

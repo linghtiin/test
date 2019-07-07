@@ -3,8 +3,6 @@
 Created on Tue Apr 30 00:33:02 2019
     待办:
         check_index: 添加从数据库获取已有数据进行增量更新的功能
-        根据index下载文本
-        根据Spandate更新文本
 
     预定规则：
         返回值[ -1:错误，需要重新加载；
@@ -16,9 +14,7 @@ import json
 from time import sleep as timesleep
 from collections import OrderedDict
 from httpclient import HttpClient
-from htmlfilter import get_info
-from htmlfilter import get_index
-from htmlfilter import get_text
+from htmlfilter import get_info, get_index, get_text
 
 from sql_connect import My_sqlconnecter
 
@@ -33,7 +29,7 @@ class Noveldownloader(object):
         self.Text = OrderedDict()
         self.info = None
         self.index = []
-        self.check_index()
+#        self.check_index()
 #        self.run()
 #        self.save()
         
@@ -43,12 +39,12 @@ class Noveldownloader(object):
                  self.home + '/' + self.ncode)
         try:
             print('check index:')
-            HClient = HttpClient(_urls,None)
+            HClient = HttpClient(_urls)
             _pages = HClient.pages
-            HClient.close()
         except:
             print('Error!!get page fail.')
             print('please tey again.')
+            raise 
             return -1
         if None in _pages:
             print('get page fail.')
@@ -66,11 +62,11 @@ class Noveldownloader(object):
         
         #检测数据库，是否为新书籍
         if (_info_sql == None) | (_index_sql == None):
-            print ("New Book:",_info[0]['ncode'],'\n',_info[0]['title'])
+            print("New Book:", _info[0]['ncode'], '\n\t', _info[0]['Title'])
             self.info = _info
             self.index = _index
             self.check = [False] * len(_index)
-            return 1
+            return 2
         #检查数据更新时间,是否已完成下载
         if (_info_sql.UpDate == _info[0]['update']) & (len(_index) == len(_index_sql)):
             if all(map(lambda x: x.Check,_index_sql)):
@@ -96,28 +92,6 @@ class Noveldownloader(object):
         self.index = _index
         return 1
     
-    def first_run(self):
-        """ 下载文本 """
-        _urls = [self.home + i['Href'] for i in self.index]
-
-        try:
-            print('first run:')
-            HClient = HttpClient(_urls, None)
-            for x in HClient.page_generater:
-                if x == 0:
-                    break
-                elif x != None:
-                    _text = get_text(x)
-                    self.Text[_text['No']] = _text
-                    self.check[int(_text['No'])-1] = True
-        except :
-            print('download text fail.')
-            raise
-        HClient.close()
-        if all(self.check) == True:
-            return 0
-        else:
-            return -1
     
     def run(self):
         """ 通过提交委托下载文本 """
@@ -127,8 +101,8 @@ class Noveldownloader(object):
                 
         try:
             print('run:')
-            HClient = HttpClient(_urls, None)
-            for x in HClient.page_generater:
+            HClient = HttpClient(_urls)
+            for x in HClient.page_generater():
                 if x==0:
                     break
                 elif x != None:
@@ -137,6 +111,7 @@ class Noveldownloader(object):
                     self.check[int(_text['No'])-1] = True
         except:
             print('download text fail.')
+            raise
             return -1
         HClient.close()    
         if all(self.check) == True:
@@ -188,7 +163,6 @@ def text_tran(Text):
             text += '\n'
         else:
             text += line + '\n'
-            
     return text
     
 def text_intran(text):
@@ -196,7 +170,6 @@ def text_intran(text):
     Text = {}
     for i, line in enumerate(text.split('\n')[0:-1]):
         Text['L'+str(i+1)] = line
-        
     return Text
     
 if __name__ == "__main__":
@@ -205,19 +178,21 @@ if __name__ == "__main__":
 #    n1.run()
 #    n1.text_update_sql()
     
-    n2 = Noveldownloader('N9669BK')
+    n2 = Noveldownloader('n4251cr')
     f = n2.check_index()
     if f == 0:
-        print('\tAdd to sql.')
-        n2.to_sql()
+        pass
     elif f == 1:
         print('\t update the index.')
         n2.index_update_sql()
         while n2.run() :
             n2.text_update_sql()
             timesleep(20)
-    
-    
-    
-#    n1.first_run()
-#    pass
+    elif f == 2:
+        print('\t add the info&index.')
+        n2.to_sql()
+        while n2.run() :
+            n2.text_update_sql()
+            timesleep(20)
+        
+            
