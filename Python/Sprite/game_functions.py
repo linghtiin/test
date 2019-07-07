@@ -205,7 +205,7 @@ def check_alien_buttom(ai_settings, stats, sb, screen, ship, alines, bullets):
             break
         
 def check_high_score(stats, sb):
-    """  """
+    """ 更新最高分 """
     if stats.score > stats.high_score:
         stats.high_score = stats.score
         sb.prep_high_score()
