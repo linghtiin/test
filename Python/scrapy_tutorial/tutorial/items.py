@@ -13,7 +13,7 @@ class TutorialItem(Item):
     # name = Field()
     pass
 
-class NovelItem(Item):
+class Novelshort(Item):
     """docstring for NovelItem"""
     ncode = Field()
     Title = Field()

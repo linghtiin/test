@@ -95,13 +95,13 @@ class NovelSpider(scrapy.Spider):
                 subox['Chapter'] = Chapter
                 subox['Subtitle'] = sub.dd.a.text
                 subox['Href'] = sub.dd.a.attrs['href']
-                subox['Update'] = _t1
+                subox['update'] = _t1
                 if sub.select('.long_update')[0].span:
                     t_spandate = sub.select('.long_update')[0].span.attrs['title']
                     _t2 = datetime.strptime(t_spandate,'%Y/%m/%d %H:%M 改稿')
-                    subox['Spandate'] = _t2
+                    subox['spandate'] = _t2
                 else:
-                    subox['Spandate'] = None
+                    subox['spandate'] = None
                 sub_num += 1
             else:
                 pass
