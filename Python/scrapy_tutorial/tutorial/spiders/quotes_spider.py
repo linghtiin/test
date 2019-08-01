@@ -74,7 +74,7 @@ class NovelSpider(scrapy.Spider):
         _re = _re + response.xpath('//*[@id="noveltable2"]/tr[7]/td').re(r'([\d,]+pt)') # .replace(',','')
         Book['Hotpower'] = [x.replace(',','') for x in _re]
         _count = response.xpath('//*[@id="noveltable2"]/tr[10]/td').re(r'[\d,]+')
-        Book['Count'] = _count[0]
+        Book['Count'] = _count[0].replace(',','')
         yield Book
 
 

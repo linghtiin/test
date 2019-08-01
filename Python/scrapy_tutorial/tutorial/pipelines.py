@@ -49,22 +49,22 @@ class MysqlPipeline(object):
         ins1 = """INSERT INTO `test1`.`book` 
                     (`ncode`, `Title`, `Auther`, `State`, `begindate`, `update`, `EX`, `Tag`, `Type`, `Hotpower`, `Count`) 
                     VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s);"""
-        data1 = (item.ncode, item.Title, item.Auther, item.EX,
-                item.begindate.strftime('%Y-%m-%d %H:%M:%S'),
-                item.update.strftime('%Y-%m-%d %H:%M:%S'), 
-                item.State, str(item.Tag), str(item.Type), str(item.Hotpower),
-                item.Count)
+        data1 = (item['ncode'], item['Title'], item['Auther'], item['State'],
+                item['begindate'].strftime('%Y-%m-%d %H:%M:%S'),
+                item['update'].strftime('%Y-%m-%d %H:%M:%S'), 
+                item['EX'], str(item['Tag']), str(item['Type']), str(item['Hotpower']),
+                item['Count'])
         
         ins2 = """INSERT INTO `test1`.`bookcontent` 
-                (`ncode`, `Subnum`, `Chapter`, `Subtitle`, `update`, `spandate`, `Text`, `Note`) 
-                VALUES (%s, %d, %s, %s, %s, %s, %s, %s);"""
+                (`ncode`, `Subnum`, `Chapter`, `Subtitle`, `update`, `spandate`) 
+                VALUES (%s, %s, %s, %s, %s, %s);"""
         
-        self.cursor.executemany(ins1, data1)
+        self.cursor.executemany(ins1, [data1])
         data2_sum = []
-        for i in range(len(item.Index)):
-            data2 = (item.ncode, item.Index[i].Subnum, 
-                item.Index[i].Chapter, item.Index[i].Subtitle, 
-                item.Index[i].update, item.Index[i].spandate)
+        for i in range(len(item['Index'])):
+            data2 = (item['ncode'], item['Index'][i]['Subnum'], 
+                item['Index'][i]['Chapter'], item['Index'][i]['Subtitle'], 
+                item['Index'][i]['update'], item['Index'][i]['spandate'])
             data2_sum.append(data2)
         self.cursor.executemany(ins2, data2_sum)
         self.db.commit()
@@ -74,7 +74,7 @@ class MysqlPipeline(object):
         # data = dict(item)
         # keys = ', '.join(data.keys())
         # values = ', '.join(['%s'] * len(data))
-        # sql = 'insert into %s (%s) values (%s)' % (item.table, keys, values)
+        # sql = 'insert into %s (%s) values (%s)' % (item['table'], keys, values)
         # self.cursor.execute(sql, tuple(data.values()))
         # self.db.commit()
         # return item
