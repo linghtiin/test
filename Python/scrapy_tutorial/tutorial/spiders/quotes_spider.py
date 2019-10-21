@@ -4,18 +4,46 @@
 
 """
 
+#import re
 import scrapy
-import re
+import logging
+from scrapy.spiders import CrawlSpider, Rule
+from scrapy.linkextractors import LinkExtractor
 from tutorial.items import NovelItem
 from datetime import datetime
 from bs4 import BeautifulSoup as bs
 
+logger = logging.getLogger('mycustomLogger')
+
 class QuotesSpider(scrapy.Spider):
     """docstring for QuotesSpider"""
     name = "quotes"
+    allowed_domains = ""
     start_urls = [
             'http://quotes.toscrape.com/tag/humor'
         ]
+    my_tag_urls = set()
+    my_used_urls = set()
+
+
+    def start_requests(self):
+        return [scrapy.FormRequest("http://quotes.toscrape.com/login",
+                               formdata={'username': 'Linghtiin', 'password': '123456'},
+                               callback=self.logged_in)]
+
+    def logged_in(self, response):
+        # here you would extract links to follow and return Requests for
+        # each of them, with another callback
+        # scrapy.shell.inspect_response(response, self)
+        tags = response.xpath('/html/body/div/div[2]/div[2]/span')
+        for tag in tags:
+            shorthref = tag.xpath("./a/@href").get()
+            taghref = response.urljoin(shorthref)
+            self.my_tag_urls.add(taghref)
+        nexttag = self.my_tag_urls.pop()
+        self.my_used_urls.add(nexttag)
+        return scrapy.Request(nexttag)
+
 
     def parse(self, response):
         for quote in response.css('div.quote'):
@@ -24,18 +52,39 @@ class QuotesSpider(scrapy.Spider):
                 'author': quote.xpath('span/small/text()').extract_first(),
             }
         next_page = response.css('li.next a::attr("href")').extract_first()
+
+        tags = response.css('a[class=tag]::attr("href")')
+        for tag in tags:
+            shorthref = tag.get()
+            taghref = response.urljoin(shorthref)
+            if taghref not in self.my_used_urls:
+                self.my_tag_urls.add(taghref)
         if next_page is not None:
             yield response.follow(next_page, self.parse)
+        elif len(self.my_tag_urls):
+            nexttag = self.my_tag_urls.pop()
+            self.my_used_urls.add(nexttag)
+            logger.info('Tag`s len: %s' % (len(self.my_tag_urls)))
+            yield response.follow(nexttag)
+        else:
+            scrapy.shell.inspect_response(response, self)
+            return None
 
 
-class NovelSpider(scrapy.Spider):
+class NovelSpider(CrawlSpider):
     """docstring for NovelSpider"""
     name = "novelcrawler"
-    #allowed_domains = "syosetu.com"
+    allowed_domains = "syosetu.com"
     start_urls = [
-        # 'http://localhost:8842/Subpage/%E7%95%B0%E4%B8%96%E7%95%8C%E8%BF%B7%E5%AE%AE%E3%81%AE%E6%9C%80%E6%B7%B1%E9%83%A8%E3%82%92%E7%9B%AE%E6%8C%87%E3%81%9D%E3%81%86.html',
-        'https://ncode.syosetu.com/n0089bk/'
+        'https://ncode.syosetu.com/n0089bk/',
+        'https://ncode.syosetu.com/n4251cr/'
     ]
+
+    rules = (
+        # info
+        Rule(LinkExtractor(allow=('n0089bk/', ), deny=(r'\w+/', ))),
+        Rule(LinkExtractor(allow=(r'\w+/', )), callback='parse_text')
+        )
 
     def parse(self, response):
         """ 爬虫主体 """
@@ -75,7 +124,7 @@ class NovelSpider(scrapy.Spider):
         Book['Hotpower'] = [x.replace(',','') for x in _re]
         _count = response.xpath('//*[@id="noveltable2"]/tr[10]/td').re(r'[\d,]+')
         Book['Count'] = _count[0].replace(',','')
-        yield Book
+        return Book
 
 
     def part_index(self, index):
@@ -108,4 +157,8 @@ class NovelSpider(scrapy.Spider):
             Book_index.append(subox)
 
         return Book_index
+
+    def parse_text(self, response):
+        """ get the text """
+        pass
 

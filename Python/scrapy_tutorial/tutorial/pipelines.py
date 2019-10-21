@@ -5,12 +5,27 @@
 # Don't forget to add your pipeline to the ITEM_PIPELINES setting
 # See: https://doc.scrapy.org/en/latest/topics/item-pipeline.html
 
+import json
 import pymysql
 import datetime
 
 class TutorialPipeline(object):
+    def __init__(self, spiderName):
+        self.crawlerName = spiderName
+    @classmethod
+    def from_crawler(cls, crawler):
+        return cls(
+            spiderName = crawler.spider.name,
+            )
+
+    def open_spider(self, spider):
+        self.fp = open('./%s.json'% self.crawlerName, 'w+')
     def process_item(self, item, spider):
+        line = json.dumps(dict(item)) + '\n'
+        self.fp.write(line)
         return item
+    def close_spider(self, spider):
+        self.fp.close()
 
 class MysqlPipeline(object):
     """docstring for SQLPipeline"""
